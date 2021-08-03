@@ -119,3 +119,8 @@ def make_confusion_matrix(cf,
     
     if title:
         plt.title(title)
+        
+def groupby_(dataFrame, col, col_name):
+    p=dataFrame.groupby(col).size()
+    s=dataFrame[col].value_counts(normalize=True,sort=False).mul(100) 
+    display(pd.DataFrame({'#'+col_name:s.index, '+':p.values, '%':s.values }))
