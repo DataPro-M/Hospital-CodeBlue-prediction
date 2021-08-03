@@ -1,7 +1,9 @@
 # Thanks to "Dennis Trimarchi"  from https://github.com/DTrimarchi10/confusion_matrix
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy                       as np
+import matplotlib.pyplot           as plt
+import seaborn                     as sns
+import pandas                      as pd
+
 
 def make_confusion_matrix(cf,
                           group_names=None,
