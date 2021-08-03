@@ -1,6 +1,6 @@
-# Early Prediction of Patient Cardiac Arrest (Code Blue) 
-## using Machine Learning 
-#### imbalance classification ptoblem
+## Early Prediction of Patient MET call and Cardiac Arrest (Code Blue) call 
+### using Machine Learning 
+##### imbalance classification ptoblem
 
 ![alt tag](images/cb-rate-new.jpeg)
 “Code blue” (CB) is a popular hospital emergency code, which is used by hospitals to alert their emergency response team of any cardiorespiratory arrest. 
