@@ -1,5 +1,5 @@
 ## Early Prediction of Patient MET call and Cardiac Arrest (Code Blue) call 
-### using Machine Learning 
+### Machine Learning project 
 ##### imbalance classification ptoblem
 
 ![alt tag](images/cb-rate-new.jpeg)
