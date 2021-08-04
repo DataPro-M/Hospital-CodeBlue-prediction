@@ -3,7 +3,18 @@ import numpy                       as np
 import matplotlib.pyplot           as plt
 import seaborn                     as sns
 import pandas                      as pd
+from sklearn.metrics               import auc, precision_recall_curve
+from sklearn.metrics               import average_precision_score
+from sklearn.model_selection       import RepeatedStratifiedKFold
+from sklearn.metrics               import make_scorer
+from sklearn.model_selection       import GridSearchCV
+from sklearn.metrics               import fbeta_score
+from sklearn.metrics               import recall_score
 
+
+
+
+import matplotlib.pyplot           as plt
 
 def make_confusion_matrix(cf,
                           group_names=None,
@@ -126,3 +137,95 @@ def groupby_(dataFrame, col, col_name):
     p=dataFrame.groupby(col).size()
     s=dataFrame[col].value_counts(normalize=True,sort=False).mul(100) 
     display(pd.DataFrame({'#'+col_name:s.index, '+':p.values, '%':s.values }))
+    
+
+
+
+#=================================
+#        model comparision
+#=================================
+def PRC_model(X_tr, y_tr, X_tst, y_tst,  model):
+    # define evaluation procedure
+    model.fit(X_tr, y_tr)
+    probs = model.predict_proba(X_tst)[:, 1]    
+
+    precision, recall, _ = precision_recall_curve(y_tst, probs)
+    auc_ = auc(recall, precision)
+    
+    prediction = model.predict(X_tst)
+    average_precision = average_precision_score(y_tst, prediction)
+
+    return precision, recall, auc_, average_precision
+
+def PRC_models(models, names, results,X_train, y_train, X_test, y_test):
+    baseline_model = sum(y_test == 1) / len(y_test)
+    
+    plt.figure(figsize=(20, 10))
+    plt.plot([0, 1], [baseline_model, baseline_model], linestyle='--', label='Baseline model')    
+    
+    # evaluate each model
+    for i in range(len(models)):
+        # evaluate the model and store results
+        precision, recall, auc_, average_precision = PRC_model(X_train, y_train, X_test, y_test, models[i])
+        plt.plot(recall, precision, label='AUC ({}): {:.2f}'.format(names[i], auc_))
+        print('{}: precision: {}, recall: {}, auc_: {}, Average precision-recall: {}'.format(names[i],np.mean(precision),np.mean(recall), auc_, average_precision))
+        
+     
+    # plot the results
+    plt.title('Precision-Recall Curve', size=20)
+    plt.xlabel('Recall', size=14)
+    plt.ylabel('Precision', size=14)
+    plt.legend();
+    plt.show()
+    
+#=================================
+#        evaluate a model
+#=================================
+def evaluate_model(X, y, model):
+    # define evaluation procedure
+    cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=1, random_state=1)
+    # define the model evaluation metric
+    metric = make_scorer(recall_score)#sensitivity_score)
+    #metric = make_scorer(fbeta_score, beta=2)
+    # evaluate model
+    scores = cross_val_score(model, X, y, scoring=metric, cv=cv, n_jobs=-1)
+    return scores
+
+def evaluate_models(models, names, results, X, y):
+    # evaluate each model
+    for i in range(len(models)):
+        # evaluate the model and store results
+        scores = evaluate_model(X, y, models[i])
+        results.append(scores)
+        # summarize and store
+        print('>%s %.3f (%.3f)' % (names[i], np.mean(scores), np.std(scores)))
+    # plot the results
+    plt.boxplot(results, labels=names, showmeans=True)
+    plt.show()
+    
+#=================================
+#        gridsearch
+#=================================
+def gc_model(X_tr , y_tr, X_tst, y_tst, model, space):
+    # define evaluation procedure
+    cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=1, random_state=1)
+    # define the model evaluation metric
+    metric = make_scorer(recall_score)#sensitivity_score)
+    #metric = make_scorer(fbeta_score, beta=2)
+    # evaluate model
+    search = GridSearchCV(estimator=model, param_grid=space, n_jobs=-1, cv=cv, scoring=metric,
+                          error_score=0,verbose=5)
+    search_result = search.fit(X_tr , y_tr)
+    print('Training set score: ' + str(search.score(X_tr , y_tr)))
+    print('Test set score: ' + str(search.score(X_tst, y_tst)))
+    return search_result
+
+def gc_models(models, names, results, spaces,X_tr , y_tr, X_tst, y_tst):
+        
+    # evaluate each model
+    for i in range(len(models)):
+        # evaluate the model and store results
+        search_result = gc_model(X_tr , y_tr, X_tst, y_tst, models[i], spaces[i])
+        #results.append(scores)
+        # summarize and store
+        print("Best of %s: %f using %s \n" % (names[i], search_result.best_score_, search_result.best_params_))
